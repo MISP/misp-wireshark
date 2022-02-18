@@ -15,7 +15,7 @@
     - ![MISP result](doc/pictures/misp.png)
 
 ## Installation
-On linux, clone the repository:
+On linux, clone the repository in wireshark's plugin location folder
 ```bash
 mkdir ~/.local/lib/wireshark/plugins
 cd ~/.local/lib/wireshark/plugins
