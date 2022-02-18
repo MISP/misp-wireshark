@@ -10,8 +10,9 @@
     - `Export path`:
     - `Tags`:
 3. Copy or save in a file the data to be imported in MISP
-    - ![Plugin options](doc/pictures/output.png)
+    - ![Plugin output](doc/pictures/output.png)
 4. Import in MISP
+    - ![MISP result](doc/pictures/misp.png)
 
 ## Installation
 On linux, clone the repository:
