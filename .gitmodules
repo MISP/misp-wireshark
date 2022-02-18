@@ -1,0 +1,3 @@
+[submodule "lib/LuaMISP"]
+	path = lib/LuaMISP
+	url = https://github.com/MISP/LuaMISP.git
