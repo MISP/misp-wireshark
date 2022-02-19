@@ -21,6 +21,7 @@ On linux, clone the repository in wireshark's plugin location folder
 mkdir -p ~/.local/lib/wireshark/plugins
 cd ~/.local/lib/wireshark/plugins
 git clone https://github.com/MISP/misp-wireshark 
+cd misp-wireshark/
 git submodule update --init --recursive
 ```
 
