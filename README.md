@@ -1,7 +1,11 @@
 # misp-wireshark
+
 `misp-wireshark` is a Lua plugin intended to help analysts extract data from Wireshark and convert it into the [MISP Core format](https://www.misp-project.org/datamodels/)
 
+[![](https://raw.githubusercontent.com/MISP/misp-wireshark/main/doc/pictures/misp-wireshark.png)](https://youtu.be/B7xs5SwhlTA)
+
 ## Usage
+
 1. Go to `Tools` located in Wireshark's top bar and click on `MISP: Export to MISP format`
 2. Enter the export options to configure the behavior of the exporter
     - ![Plugin options](doc/pictures/options.png)
@@ -15,6 +19,7 @@
     - ![MISP result](doc/pictures/misp.png)
 
 ## Installation
+
 On linux, clone the repository in wireshark's plugin location folder
 
 ```bash
@@ -26,6 +31,7 @@ git submodule update --init --recursive
 ```
 
 ## Updates
+
 ```bash
 git pull
 git submodule update
@@ -34,7 +40,8 @@ git submodule update
 :warning: In order for this plugin to use [community-id](https://github.com/corelight/community-id-spec), wireshark must at version 3.3.1 or higher
 
 
-## Exports supported
+## Exports supported in MISP object format
+
 - [`network-connection`](https://www.misp-project.org/objects.html#_network_connection) from tcp
 - [`http-request`](https://www.misp-project.org/objects.html#_http_request) from tcp.http, including HTTP payloads
 - [`dns-record`](https://www.misp-project.org/objects.html#_dns_record) from udp.dns
