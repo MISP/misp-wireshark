@@ -63,6 +63,7 @@ local summary = {
     http_payload_total_size = 0,
     dns_record = 0,
 }
+local final_output
 
 
 local function menuable_tap(main_filter)
@@ -86,7 +87,7 @@ local function menuable_tap(main_filter)
     -- we tell the window to call the remove() function when closed
     tw:set_atclose(remove)
     -- add buttons to the window
-    tw:add_button("Save to file", function () wiresharkUtils.save_to_file(tw:get_text(), tw) end)
+    tw:add_button("Save to file", function () wiresharkUtils.save_to_file(final_output, EXPORT_FILEPATH, tw) end)
 
 
     -- this function will be called once for each packet
@@ -135,7 +136,8 @@ local function menuable_tap(main_filter)
             dns_queries = dns_queries,
         }
         local misp_format = generate_misp_format(collected_data)
-        local output_too_large = true
+        final_output = misp_format
+        local output_too_large = #misp_format / 1024 > 500 -- Output larger than ~500k
         if not output_too_large then
             tw:set(misp_format)
         else
@@ -273,7 +275,7 @@ function generate_summary()
     local text = ''
     for key, amount in pairs(summary) do
         if key == 'http_payload_total_size' then
-            text = text .. string.format('- %s: %s bytes\n', key, amount)
+            text = text .. string.format('- %s: %s\n', key, wiresharkUtils.humanizeFilesize(tonumber(amount)))
         else
             text = text .. string.format('- %s: %s\n', key, amount)
         end
