@@ -60,6 +60,10 @@ local get_dns_ptr                   = Field.new("dns.ptr.domain_name")
 local get_dns_a                     = Field.new("dns.a")
 local get_dns_aaaa                  = Field.new("dns.aaaa")
 local get_dns_ns                    = Field.new("dns.ns")
+local get_dns_cname                 = Field.new("dns.cname")
+local get_dns_srv                   = Field.new("dns.srv.name")
+local get_dns_soa                   = Field.new("dns.soa.rname")
+local get_dns_spf                   = Field.new("dns.spf")
 
 
 local INCLUDE_HTTP_PAYLOAD = true
@@ -441,22 +445,48 @@ function handleDNS(dns_queries, contextualData)
     end
     local dns_mx = get_dns_mx()
     if dns_mx then
-        dns_queries[query_name]['dns_mx'] = tostring(dns_mx)
+        dns_queries[query_name]['dns_mx'] = getAllFieldValues(get_dns_mx)
     end
     local dns_ptr = get_dns_ptr()
     if dns_ptr then
-        dns_queries[query_name]['dns_ptr'] = tostring(dns_ptr)
+        dns_queries[query_name]['dns_ptr'] = getAllFieldValues(get_dns_ptr)
     end
     local dns_a = get_dns_a()
     if dns_a then
-        dns_queries[query_name]['dns_a'] = tostring(dns_a)
+        dns_queries[query_name]['dns_a'] = getAllFieldValues(get_dns_a)
     end
     local dns_aaaa = get_dns_aaaa()
     if dns_aaaa then
-        dns_queries[query_name]['dns_aaaa'] = tostring(dns_aaaa)
+        dns_queries[query_name]['dns_aaaa'] = getAllFieldValues(get_dns_aaaa)
     end
     local dns_ns = get_dns_ns()
     if dns_ns then
-        dns_queries[query_name]['dns_ns'] = tostring(dns_ns)
+        dns_queries[query_name]['dns_ns'] = getAllFieldValues(get_dns_ns)
     end
+
+    local dns_cname = get_dns_cname()
+    if dns_cname then
+        dns_queries[query_name]['dns_cname'] = getAllFieldValues(dns_cname)
+    end
+    local dns_srv = get_dns_srv()
+    if dns_srv then
+        dns_queries[query_name]['dns_srv'] = getAllFieldValues(dns_srv)
+    end
+    local dns_soa = get_dns_soa()
+    if dns_soa then
+        dns_queries[query_name]['dns_soa'] = getAllFieldValues(dns_soa)
+    end
+    local dns_spf = get_dns_spf()
+    if dns_spf then
+        dns_queries[query_name]['dns_spf'] = getAllFieldValues(dns_spf)
+    end
+end
+
+function getAllFieldValues(field)
+    local tmp = { field() }
+    local values = {}
+    for i=1,#tmp do
+        values[i] = tostring(tmp[i])
+    end
+    return values
 end

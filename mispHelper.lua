@@ -158,26 +158,72 @@ function mispHelper.generate_misp_http_request_object(http_request)
 end
 
 function mispHelper.generate_misp_dns_record_object(query_name, dns_query)
-    local a_queried_domain  = Attribute:new({object_relation='content-type', type='other', value=query_name})
-    local a_a_record        = Attribute:new({object_relation='a-record', type='ip-dst', value=dns_query['dns_a']})
-    local a_aaaa_record     = Attribute:new({object_relation='aaaa-record', type='ip-dst', value=dns_query['dns_aaaa']})
-    local a_mx_record       = Attribute:new({object_relation='mx-record', type='other', value=dns_query['dns_mx']})
-    local a_ns_record       = Attribute:new({object_relation='ns-record', type='other', value=dns_query['dns_ns']})
-    local a_ptr_record      = Attribute:new({object_relation='ptr-record', type='other', value=dns_query['dns_ptr']})
     -- local a_spf_record      = Attribute:new({object_relation='spf-record', type='other', value=dns_query['dns_spf']})
     -- local a_srv_record      = Attribute:new({object_relation='srv-record', type='other', value=dns_query['dns_srv']})
     -- local a_soa_record      = Attribute:new({object_relation='soa-record', type='other', value=dns_query['dns_soa']})
     -- local a_cname_record    = Attribute:new({object_relation='cname-record', type='domain', value=dns_query['dns_cname']})
-    -- local a_text            = Attribute:new({object_relation='text', type='text', value=dns_query['text']})
 
     local o_dns_record = Object:new(get_dns_record_template())
     o_dns_record.first_seen = os.date("%Y-%m-%d %X", dns_query['first_seen'])
-    o_dns_record:addAttribute(a_queried_domain)
-    o_dns_record:addAttribute(a_a_record)
-    o_dns_record:addAttribute(a_aaaa_record)
-    o_dns_record:addAttribute(a_mx_record)
-    o_dns_record:addAttribute(a_ns_record)
-    o_dns_record:addAttribute(a_ptr_record)
+    o_dns_record:addAttribute(Attribute:new({object_relation='queried-domain', type='domain', value=query_name}))
+
+    if dns_query['dns_a'] ~= nil then
+        for i, a_record in pairs(dns_query['dns_a']) do
+            local a_a_record = Attribute:new({object_relation='a-record', type='ip-dst', value=a_record})
+            o_dns_record:addAttribute(a_a_record)
+        end
+    end
+    if dns_query['dns_aaaa'] ~= nil then
+        for i, aaaa_record in pairs(dns_query['dns_aaaa']) do
+            local a_aaaa_record = Attribute:new({object_relation='aaaa-record', type='ip-dst', value=aaaa_record})
+            o_dns_record:addAttribute(a_aaaa_record)
+        end
+    end
+    if dns_query['dns_mx'] ~= nil then
+        for i, mx_record in pairs(dns_query['dns_mx']) do
+            local a_mx_record = Attribute:new({object_relation='mx-record', type='other', value=mx_record})
+            o_dns_record:addAttribute(a_mx_record)
+        end
+    end
+    if dns_query['dns_ns'] ~= nil then
+        for i, ns_record in pairs(dns_query['dns_ns']) do
+            local a_ns_record = Attribute:new({object_relation='ns-record', type='other', value=ns_record})
+            o_dns_record:addAttribute(a_ns_record)
+        end
+    end
+    if dns_query['dns_ptr'] ~= nil then
+        for i, ptr_record in pairs(dns_query['dns_ptr']) do
+            local a_ptr_record = Attribute:new({object_relation='ptr-record', type='other', value=ptr_record})
+            o_dns_record:addAttribute(a_ptr_record)
+        end
+    end
+
+
+    if dns_query['dns_cname'] ~= nil then
+        for i, cname_record in pairs(dns_query['dns_cname']) do
+            local a_cname_record = Attribute:new({object_relation='cname-record', type='domain', value=cname_record})
+            o_dns_record:addAttribute(a_cname_record)
+        end
+    end
+    if dns_query['dns_srv'] ~= nil then
+        for i, srv_record in pairs(dns_query['dns_srv']) do
+            local a_srv_record = Attribute:new({object_relation='srv-record', type='domain', value=srv_record})
+            o_dns_record:addAttribute(a_srv_record)
+        end
+    end
+    if dns_query['dns_soa'] ~= nil then
+        for i, soa_record in pairs(dns_query['dns_soa']) do
+            local a_soa_record = Attribute:new({object_relation='soa-record', type='domain', value=soa_record})
+            o_dns_record:addAttribute(a_soa_record)
+        end
+    end
+    if dns_query['dns_spf'] ~= nil then
+        for i, spf_record in pairs(dns_query['dns_spf']) do
+            local a_spf_record = Attribute:new({object_relation='spf-record', type='ip-dst', value=spf_record})
+            o_dns_record:addAttribute(a_spf_record)
+        end
+    end
+
     return o_dns_record
 end
 
