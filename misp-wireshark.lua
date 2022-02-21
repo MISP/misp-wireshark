@@ -55,14 +55,9 @@ local get_dns_ns                    = Field.new("dns.ns")
 local SUPPORT_COMMUNITY_ID = false
 local INCLUDE_HTTP_PAYLOAD = true
 local EXPORT_FILEPATH = ''
+local FILTERS = ''
 local TAGS = {}
-local summary = {
-    network_connection = 0,
-    http_request = 0,
-    http_payload = 0,
-    http_payload_total_size = 0,
-    dns_record = 0,
-}
+local summary = {}
 local final_output
 
 
@@ -76,8 +71,8 @@ local function menuable_tap(main_filter)
     local dns_queries = {}
 
     -- local filters = get_filter() or '' -- get_filter() function is not working anymore. We rely on user provided filter instead
-    local filters = main_filter
-    local tap = Listener.new(nill, filters);
+    FILTERS = main_filter
+    local tap = Listener.new(nill, FILTERS);
 
     local function remove()
         -- this way we remove the listener that otherwise will remain running indefinitely
@@ -142,7 +137,11 @@ local function menuable_tap(main_filter)
             tw:set(misp_format)
         else
             local summary = generate_summary()
-            local text = 'Output is too large to be displayed.\nContent:\n'
+            local text = ''
+            if (FILTERS == '') then
+                text = text .. '[warning] No filters have been set. The whole capture has been processed.\n'
+            end
+            text = text .. '[info] Output is too large to be displayed.\n\nOutput content:\n'
             text = text .. summary
             tw:set(text)
         end
@@ -228,6 +227,13 @@ function generate_misp_format(collected_data)
     local http_payloads = collected_data.http_payloads
     local http_packets = collected_data.http_packets
     local dns_queries = collected_data.dns_queries
+    summary = {
+        network_connection = 0,
+        http_request = 0,
+        http_payload = 0,
+        http_payload_total_size = 0,
+        dns_record = 0,
+    }
 
     local event = Event:new({title='Wireshark test event'})
 
