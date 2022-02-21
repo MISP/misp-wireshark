@@ -40,7 +40,7 @@ git submodule update
 
 
 ## Notes about `community-id`
-:warning: In order for this plugin to use [community-id](https://github.com/corelight/community-id-spec), wireshark must at version 3.3.1 or higher
+:warning: In order for this plugin to use [community-id](https://github.com/corelight/community-id-spec), wireshark must be at version 3.3.1 or higher.
 
 By default, `community-id` is disabled. To enable it, you have to perform these steps:
 1. On the top bar go to `Analyze/Enabled Protocols...`
