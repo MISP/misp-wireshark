@@ -18,8 +18,6 @@
 4. Import in MISP
     - ![MISP result](doc/pictures/misp.png)
 
--> Note about community-id
--> Note about 
 
 ## Installation
 
@@ -40,7 +38,14 @@ git pull
 git submodule update
 ```
 
+
+## Notes about `community-id`
 :warning: In order for this plugin to use [community-id](https://github.com/corelight/community-id-spec), wireshark must at version 3.3.1 or higher
+
+By default, `community-id` is disabled. To enable it, you have to perform these steps:
+1. On the top bar go to `Analyze/Enabled Protocols...`
+2. Search for `CommunityID` in the list
+3. Check the checkbox
 
 
 ## Exports supported in MISP object format
