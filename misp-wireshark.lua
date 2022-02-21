@@ -435,51 +435,29 @@ function handleDNS(dns_queries, contextualData)
     local first_seen = tonumber(contextualData.pinfo.abs_ts)
     dns_queries[query_name]['first_seen'] = first_seen
 
-    local dns_query_type = get_dns_query_type()
-    if dns_query_type then
-        dns_queries[query_name]['dns_query_type'] = tostring(dns_query_type)
-    end
-    local dns_resp_class = get_dns_resp_class()
-    if dns_resp_class then
-        dns_queries[query_name]['dns_resp_class'] = tostring(dns_resp_class)
-    end
-    local dns_mx = get_dns_mx()
-    if dns_mx then
-        dns_queries[query_name]['dns_mx'] = getAllFieldValues(get_dns_mx)
-    end
-    local dns_ptr = get_dns_ptr()
-    if dns_ptr then
-        dns_queries[query_name]['dns_ptr'] = getAllFieldValues(get_dns_ptr)
-    end
-    local dns_a = get_dns_a()
-    if dns_a then
-        dns_queries[query_name]['dns_a'] = getAllFieldValues(get_dns_a)
-    end
-    local dns_aaaa = get_dns_aaaa()
-    if dns_aaaa then
-        dns_queries[query_name]['dns_aaaa'] = getAllFieldValues(get_dns_aaaa)
-    end
-    local dns_ns = get_dns_ns()
-    if dns_ns then
-        dns_queries[query_name]['dns_ns'] = getAllFieldValues(get_dns_ns)
+    local function setFieldValue(var, is_string)
+        local var_value = var()
+        if var_value then
+            if is_string then
+                return tostring(var_value)
+            else
+                return getAllFieldValues(var)
+            end
+        end
     end
 
-    local dns_cname = get_dns_cname()
-    if dns_cname then
-        dns_queries[query_name]['dns_cname'] = getAllFieldValues(dns_cname)
-    end
-    local dns_srv = get_dns_srv()
-    if dns_srv then
-        dns_queries[query_name]['dns_srv'] = getAllFieldValues(dns_srv)
-    end
-    local dns_soa = get_dns_soa()
-    if dns_soa then
-        dns_queries[query_name]['dns_soa'] = getAllFieldValues(dns_soa)
-    end
-    local dns_spf = get_dns_spf()
-    if dns_spf then
-        dns_queries[query_name]['dns_spf'] = getAllFieldValues(dns_spf)
-    end
+    dns_queries[query_name]['dns_query_type'] = setFieldValue(get_dns_query_type, true)
+    dns_queries[query_name]['dns_resp_class'] = setFieldValue(get_dns_resp_class, true)
+
+    dns_queries[query_name]['dns_mx']       = setFieldValue(get_dns_mx, false)
+    dns_queries[query_name]['dns_ptr']      = setFieldValue(get_dns_ptr, false)
+    dns_queries[query_name]['dns_a']        = setFieldValue(get_dns_a, false)
+    dns_queries[query_name]['dns_aaaa']     = setFieldValue(get_dns_aaaa, false)
+    dns_queries[query_name]['dns_ns']       = setFieldValue(get_dns_ns, false)
+    dns_queries[query_name]['dns_cname']    = setFieldValue(get_dns_cname, false)
+    dns_queries[query_name]['dns_srv']      = setFieldValue(get_dns_srv, false)
+    dns_queries[query_name]['dns_soa']      = setFieldValue(get_dns_soa, false)
+    dns_queries[query_name]['dns_spf']      = setFieldValue(get_dns_spf, false)
 end
 
 function getAllFieldValues(field)
