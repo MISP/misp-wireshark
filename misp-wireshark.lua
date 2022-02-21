@@ -21,6 +21,13 @@ local wiresharkUtils = require 'mispWiresharkUtils'
  -- this only works in wireshark UI
  if not gui_enabled() then return end
 
+ local SUPPORT_COMMUNITY_ID
+ if wiresharkUtils.check_wireshark_version() then
+    SUPPORT_COMMUNITY_ID = true
+else
+    SUPPORT_COMMUNITY_ID = false
+end
+
 
 local get_http                      = Field.new("http")
 local get_http_useragent            = Field.new("http.user_agent")
@@ -39,7 +46,10 @@ local get_http_text                 = Field.new("text")
 local get_frame_number              = Field.new("frame.number")
 local get_tcp                       = Field.new("tcp")
 local get_stream_index              = Field.new("tcp.stream")
-local get_community_id              = Field.new("communityid")
+local get_community_id 
+if SUPPORT_COMMUNITY_ID then
+    get_community_id = Field.new("communityid")
+end
 
 local get_dns                       = Field.new("dns")
 local get_dns_query_name            = Field.new("dns.qry.name")
@@ -52,7 +62,6 @@ local get_dns_aaaa                  = Field.new("dns.aaaa")
 local get_dns_ns                    = Field.new("dns.ns")
 
 
-local SUPPORT_COMMUNITY_ID = false
 local INCLUDE_HTTP_PAYLOAD = true
 local EXPORT_FILEPATH = ''
 local FILTERS = ''
@@ -162,11 +171,6 @@ end
 
 
 local function dialog_options()
-    if wiresharkUtils.check_wireshark_version() then
-        SUPPORT_COMMUNITY_ID = true
-    else
-        SUPPORT_COMMUNITY_ID = false
-    end
     local working_dir = get_working_directory()
     local function dialog_export_func(main_filter, include_http_payload, export_filepath, tags_text)
         INCLUDE_HTTP_PAYLOAD = getBoolFromString(include_http_payload, true)
