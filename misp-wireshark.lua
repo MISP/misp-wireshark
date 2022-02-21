@@ -337,7 +337,7 @@ function handleHTTP(http_payloads, http_packets, contextualData)
             http_payloads[index] = {}
         end
         local raw_data = {
-            len = http_file_data.len,
+            len = http_file_data.range:bytes():len(),
             rawData = http_file_data.range:bytes():raw(),
             name = http_file_data.name,
         }
