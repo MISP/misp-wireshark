@@ -9,14 +9,17 @@
 1. Go to `Tools` located in Wireshark's top bar and click on `MISP: Export to MISP format`
 2. Enter the export options to configure the behavior of the exporter
     - ![Plugin options](doc/pictures/options.png)
-    - `Main filter`:
-    - `Include HTTP payload`:
-    - `Export path`:
-    - `Tags`:
+    - `Main filter`: Fill this field to filter the exported data. Essentially, it will just be a copy/paste from the global filter in the interface. (This cannot be done automatically because of [this](https://github.com/MISP/misp-wireshark/blob/89578d5c0eac9a23dc6f60afe223996ee0e50e32/misp-wireshark.lua#L70))
+    - `Include HTTP payload`: Should the payloads sent via HTTP be included as a file in the output
+    - `Export path`: The location where the exported file should be saved when clicking on `Save to file`
+    - `Tags`: Optional tags can be attached to some MISP attributes. 
 3. Copy or save in a file the data to be imported in MISP
     - ![Plugin output](doc/pictures/output.png)
 4. Import in MISP
     - ![MISP result](doc/pictures/misp.png)
+
+-> Note about community-id
+-> Note about 
 
 ## Installation
 
