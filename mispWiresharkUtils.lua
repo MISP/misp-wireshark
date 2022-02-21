@@ -36,7 +36,6 @@ end
 function utils.check_wireshark_version()
     local version_ok = true
     local major, minor, micro = 0, 0, 0
-    SUPPORT_COMMUNITY_ID = true
     major, minor, micro = get_version():match("(%d+)%.(%d+)%.(%d+)")
     if (
         tonumber(major) < 3) or
@@ -44,8 +43,6 @@ function utils.check_wireshark_version()
         ((tonumber(major) <= 3) and (tonumber(minor) <= 3) and (tonumber(micro) < 1)
     ) then
         version_ok = false
-        utils.make_splash("Wireshark version is too old to export the community-id!\nThis script needs Wireshark version 3.3.1 or higher to include the community-id.\n")
-        SUPPORT_COMMUNITY_ID = false
     end
     return version_ok
 end

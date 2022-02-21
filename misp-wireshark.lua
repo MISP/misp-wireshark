@@ -147,29 +147,35 @@ end
 
 local function dialog_options()
     if wiresharkUtils.check_wireshark_version() then
-        local working_dir = get_working_directory()
-        local function dialog_export_func(main_filter, include_http_payload, export_filepath, tags_text)
-            INCLUDE_HTTP_PAYLOAD = getBoolFromString(include_http_payload, true)
-            if export_filepath ~= '' then
-                EXPORT_FILEPATH = export_filepath
-            else
-                EXPORT_FILEPATH = working_dir
-            end
-            TAGS = getTableFromString(tags_text)
-            menuable_tap(main_filter)
+        SUPPORT_COMMUNITY_ID = true
+    else
+        SUPPORT_COMMUNITY_ID = false
+    end
+    local working_dir = get_working_directory()
+    local function dialog_export_func(main_filter, include_http_payload, export_filepath, tags_text)
+        INCLUDE_HTTP_PAYLOAD = getBoolFromString(include_http_payload, true)
+        if export_filepath ~= '' then
+            EXPORT_FILEPATH = export_filepath
+        else
+            EXPORT_FILEPATH = working_dir
         end
-        new_dialog(
-            "MISP format export options",
-            dialog_export_func,
-            "Main filter",
-            "Include HTTP payload? (Y/n)",
-            string.format("Export path (%s)", working_dir),
-            "Tags (comma-separated)"
-            -- {name="Main filter", value=get_filter()}, -- feature is not working according to the doc. Keep it in case it gets fixed.
-            -- {name="Include HTTP payload? (Y/n)", value="Y"},
-            -- {name="Export file path", value=working_dir},
-            -- {name="Tags (comma-separated)", value="tlp:white,extraction-origin:wireshark"}
-        )
+        TAGS = getTableFromString(tags_text)
+        menuable_tap(main_filter)
+    end
+    new_dialog(
+        "MISP format export options",
+        dialog_export_func,
+        "Main filter",
+        "Include HTTP payload? (Y/n)",
+        string.format("Export path (%s)", working_dir),
+        "Tags (comma-separated)"
+        -- {name="Main filter", value=get_filter()}, -- feature is not working according to the doc. Keep it in case it gets fixed.
+        -- {name="Include HTTP payload? (Y/n)", value="Y"},
+        -- {name="Export file path", value=working_dir},
+        -- {name="Tags (comma-separated)", value="tlp:white,extraction-origin:wireshark"}
+    )
+    if not SUPPORT_COMMUNITY_ID then
+        wiresharkUtils.make_splash("Wireshark version is too old to export the community-id!\nThis script needs Wireshark version 3.3.1 or higher to include the community-id.\n")
     end
 end
 
