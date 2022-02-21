@@ -56,6 +56,13 @@ local SUPPORT_COMMUNITY_ID = false
 local INCLUDE_HTTP_PAYLOAD = true
 local EXPORT_FILEPATH = ''
 local TAGS = {}
+local summary = {
+    network_connection = 0,
+    http_request = 0,
+    http_payload = 0,
+    http_payload_total_size = 0,
+    dns_record = 0,
+}
 
 
 local function menuable_tap(main_filter)
@@ -66,7 +73,7 @@ local function menuable_tap(main_filter)
     local http_payloads = {}
     local http_packets = {}
     local dns_queries = {}
-    
+
     -- local filters = get_filter() or '' -- get_filter() function is not working anymore. We rely on user provided filter instead
     local filters = main_filter
     local tap = Listener.new(nill, filters);
@@ -128,7 +135,15 @@ local function menuable_tap(main_filter)
             dns_queries = dns_queries,
         }
         local misp_format = generate_misp_format(collected_data)
-        tw:set(misp_format)
+        local output_too_large = true
+        if not output_too_large then
+            tw:set(misp_format)
+        else
+            local summary = generate_summary()
+            local text = 'Output is too large to be displayed.\nContent:\n'
+            text = text .. summary
+            tw:set(text)
+        end
     end
 
 
@@ -219,12 +234,14 @@ function generate_misp_format(collected_data)
         local network_object = mispHelper.generate_misp_network_connection_object_for_stream(tcp_stream)
         all_network_objects[stream_id] = network_object
         event:addObject(network_object)
+        summary['network_connection'] = summary['network_connection'] + 1
     end
 
     for frame_number, http_packet in pairs(http_packets) do
         local stream_id = http_packet['stream_id']
         local http_request_object = mispHelper.generate_misp_http_request_object(http_packet)
         event:addObject(http_request_object)
+        summary['http_request'] = summary['http_request'] + 1
         all_network_objects[stream_id]:addReference(http_request_object, 'contains')
         if INCLUDE_HTTP_PAYLOAD then
             if http_payloads[stream_id] then
@@ -233,6 +250,11 @@ function generate_misp_format(collected_data)
                     all_network_objects[stream_id]:addReference(payload_object, 'contains')
                     http_request_object:addReference(payload_object, 'contains')
                     event:addObject(payload_object)
+                    summary['http_payload'] = summary['http_payload'] + 1
+                    a_attachment = payload_object:getAttributeByName('size-in-bytes')
+                    if a_attachment ~= nil then
+                        summary['http_payload_total_size'] = summary['http_payload_total_size'] + a_attachment.value
+                    end
                 end
             end
         end
@@ -241,9 +263,22 @@ function generate_misp_format(collected_data)
     for query_name, dns_query in pairs(dns_queries) do
         local o_dns = mispHelper.generate_misp_dns_record_object(query_name, dns_query)
         event:addObject(o_dns)
+        summary['dns_record'] = summary['dns_record'] + 1
     end
     local output = event:toJson()
     return output
+end
+
+function generate_summary()
+    local text = ''
+    for key, amount in pairs(summary) do
+        if key == 'http_payload_total_size' then
+            text = text .. string.format('- %s: %s bytes\n', key, amount)
+        else
+            text = text .. string.format('- %s: %s\n', key, amount)
+        end
+    end
+    return text
 end
 
 -- Tap handler
