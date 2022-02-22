@@ -18,11 +18,24 @@ local LuaMISP = require 'lib.LuaMISP.LuaMISP'
 local mispHelper = require 'mispHelper'
 local wiresharkUtils = require 'mispWiresharkUtils'
 
- -- this only works in wireshark UI
- if not gui_enabled() then return end
+local INCLUDE_HTTP_PAYLOAD = true
+local EXPORT_FILEPATH = ''
+local FILTERS = ''
+local TAGS = {}
+local summary = {}
+local final_output
 
- local SUPPORT_COMMUNITY_ID
- if wiresharkUtils.check_wireshark_version() then
+
+local args = { ... }
+local parsedArgs = {}
+if not gui_enabled() then
+    if #args == 0 then
+        return -- Plugin most probably loaded automatically by tshark
+    end
+end
+
+local SUPPORT_COMMUNITY_ID
+if wiresharkUtils.check_wireshark_version() then
     SUPPORT_COMMUNITY_ID = true
 else
     SUPPORT_COMMUNITY_ID = false
@@ -66,38 +79,35 @@ local get_dns_soa                   = Field.new("dns.soa.rname")
 local get_dns_spf                   = Field.new("dns.spf")
 
 
-local INCLUDE_HTTP_PAYLOAD = true
-local EXPORT_FILEPATH = ''
-local FILTERS = ''
-local TAGS = {}
-local summary = {}
-local final_output
+local tcp_streams = {}
+local http_payloads = {}
+local http_packets = {}
+local dns_queries = {}
 
-
+local main_tw
+local tap
 local function menuable_tap(main_filter)
-    -- Declare the window we will use
-    local tw = TextWindow.new("MISP format export result")
+    main_tw = TextWindow.new("MISP format export result")
     
-    local tcp_streams = {}
-    local http_payloads = {}
-    local http_packets = {}
-    local dns_queries = {}
-
     -- local filters = get_filter() or '' -- get_filter() function is not working anymore. We rely on user provided filter instead
     FILTERS = main_filter
-    local tap = Listener.new(nill, FILTERS);
-
+    tap = Listener.new(nil, FILTERS)
+    register_tap()
     local function remove()
         -- this way we remove the listener that otherwise will remain running indefinitely
         tap:remove();
     end
     
     -- we tell the window to call the remove() function when closed
-    tw:set_atclose(remove)
+    main_tw:set_atclose(remove)
     -- add buttons to the window
-    tw:add_button("Save to file", function () wiresharkUtils.save_to_file(final_output, EXPORT_FILEPATH, tw) end)
+    main_tw:add_button("Save to file", function () wiresharkUtils.save_to_file(final_output, EXPORT_FILEPATH, tw) end)
 
+    -- Ensure that all existing packets are processed.
+    retap_packets()
+end
 
+function register_tap()
     -- this function will be called once for each packet
     function tap.packet(pinfo,tvb)
         local frame_number = tonumber(tostring(get_frame_number()))
@@ -136,7 +146,9 @@ local function menuable_tap(main_filter)
  
     -- this function will be called once every few seconds to update our window
     function tap.draw()
-        tw:clear()
+        if main_tw ~= nil then
+            main_tw:clear()
+        end
         local collected_data = {
             tcp_streams = tcp_streams,
             http_payloads = http_payloads,
@@ -144,19 +156,24 @@ local function menuable_tap(main_filter)
             dns_queries = dns_queries,
         }
         local misp_format = generate_misp_format(collected_data)
-        final_output = misp_format
-        local output_too_large = #misp_format / 1024 > 500 -- Output larger than ~500k
-        if not output_too_large then
-            tw:set(misp_format)
-        else
-            local summary = generate_summary()
-            local text = ''
-            if (FILTERS == '') then
-                text = text .. '[warning] No filters have been set. The whole capture has been processed.\n'
+        if main_tw ~= nil then
+            final_output = misp_format
+            local output_too_large = #misp_format / 1024 > 500 -- Output larger than ~500k
+            if not output_too_large then
+                main_tw:set(misp_format)
+            else
+                local summary = generate_summary()
+                local text = ''
+                if (FILTERS == '') then
+                    text = text .. '[warning] No filters have been set. The whole capture has been processed.\n'
+                end
+                text = text .. '[info] Output is too large to be displayed.\n\nOutput content:\n'
+                text = text .. summary
+                main_tw:set(text)
             end
-            text = text .. '[info] Output is too large to be displayed.\n\nOutput content:\n'
-            text = text .. summary
-            tw:set(text)
+        else
+            -- We are in a command-line context.
+            saveToFileIfRequested(misp_format)
         end
     end
 
@@ -164,13 +181,12 @@ local function menuable_tap(main_filter)
     -- this function will be called whenever a reset is needed
     -- e.g. when reloading the capture file
     function tap.reset()
-        tw:clear()
+        if main_tw ~= nil then
+            main_tw:clear()
+        end
         tcp_streams = {}
         http_payloads = {}
     end
-
-    -- Ensure that all existing packets are processed.
-    retap_packets()
 end
 
 
@@ -304,7 +320,6 @@ function handleTCP(tcp_streams, contextualData)
     local pinfo = contextualData.pinfo
     local stream_index = contextualData.stream_index
     local index = contextualData.index
-    local start_time = tonumber(pinfo.abs_ts)
     local tcp_srcport = tonumber(pinfo.src_port)
     local tcp_dstport = tonumber(pinfo.dst_port)
     local tcp_srcip = tostring(pinfo.src)
@@ -416,10 +431,6 @@ function handleHTTP(http_payloads, http_packets, contextualData)
     end
 end
 
--- Collect DNS query and response. If multiple same queries are in the capture, the last takes precedence
--- /!\ In case multiple replies are returned (e.g. multiple mx records) in the same query, only the first one is returned
--- This is a limitation from Wireshark's `Field.new("dns.mx.mail_exchange")`
--- If we want to have all of them, a new dissector should probably be implemented
 function handleDNS(dns_queries, contextualData)
     local query_name = get_dns_query_name()
     if query_name then
@@ -432,7 +443,6 @@ function handleDNS(dns_queries, contextualData)
         dns_queries[query_name] = {}
     end
 
-    local first_seen = tonumber(contextualData.pinfo.abs_ts)
     dns_queries[query_name]['first_seen'] = first_seen
 
     local function setFieldValue(var, is_string)
@@ -467,4 +477,41 @@ function getAllFieldValues(field)
         values[i] = tostring(tmp[i])
     end
     return values
+end
+
+function saveToFileIfRequested(misp_format)
+    if parsedArgs['export_path'] ~= nil then
+        wiresharkUtils.save_to_file(misp_format, EXPORT_FILEPATH, nil)
+    else
+        print(misp_format)
+    end
+end
+
+-- Main
+-----------------------
+if not gui_enabled() then
+    if #args == 0 then
+        return -- Plugin most probably loaded automatically by tshark
+    else
+        if #args == 1 and (args[1] == 'help') then
+            print('Usage:')
+            print('\t`export_path`:\t-X lua_script1:export_path=/home/john/Document')
+            print('\t`include_payload`:\t-X lua_script1:include_payload=y')
+            print('\t`tags`:\t-X lua_script1:tags="tag1,tag2"')
+            print('\t`help`:\t-X lua_script1:help"\n')
+        end
+        parsedArgs = wiresharkUtils.parse_args(args)
+        if parsedArgs['export_path'] == nil then
+            local working_dir = get_working_directory()
+            EXPORT_FILEPATH = working_dir
+        else
+            EXPORT_FILEPATH = parsedArgs['export_path']
+        end
+        INCLUDE_HTTP_PAYLOAD = getBoolFromString(parsedArgs['include_payload'], true)
+        TAGS = getTableFromString(parsedArgs['tags'])
+        FILTERS = parsedArgs['filters'] or ''
+    end
+
+    tap = Listener.new(nil, FILTERS)
+    register_tap()
 end

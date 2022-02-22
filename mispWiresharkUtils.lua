@@ -20,16 +20,20 @@ function utils.save_to_file(content, export_filepath, tw)
     local file = assert(io.open(full_path, "w"))
     file:write(content)
     file:close()
-    utils.make_splash(string.format("Saved %s at\n%s", filename, export_filepath))
+    utils.make_splash(string.format("Saved %s at %s", filename, export_filepath))
     if tw then
         tw:close()
     end
 end
 
 function utils.make_splash(text)
-    local splash = TextWindow.new("MISP Export error");
-    splash:set(text)
-    return splash
+    if gui_enabled() then
+        local splash = TextWindow.new("MISP Export error");
+        splash:set(text)
+        return splash
+    else
+        print(text)
+    end
 end
 
 -- verify tshark/wireshark version is new enough - needs to be 3.3.1+ as community was introduced in this version
@@ -60,5 +64,16 @@ function utils.humanizeFilesize(size)
     return text
 end
 
+function utils.parse_args(args)
+    local t = {}
+    for i, arg in ipairs(args) do
+        local matches = string.gmatch(arg, "([^=]+)=(.+)")
+        local k, v = matches()
+        if k ~= '' and v ~= '' then
+            t[k] = v
+        end
+    end
+    return t
+end
 
 return utils

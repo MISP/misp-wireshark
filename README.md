@@ -6,6 +6,8 @@
 
 ## Usage
 
+### Wireshark
+
 1. Go to `Tools` located in Wireshark's top bar and click on `MISP: Export to MISP format`
 2. Enter the export options to configure the behavior of the exporter
     - ![Plugin options](doc/pictures/options.png)
@@ -18,6 +20,26 @@
 4. Import in MISP
     - ![MISP result](doc/pictures/misp.png)
 
+### Tshark
+Command-line options are the same parameters as in the user interface:
+- `filters`: The filter expression to be applied
+- `include_payload`: Should potentials payload be also exported. Accept `y` or `n`
+- `export_path`: The folder under which the json should be saved. If not supplied, default to stdout
+- `tags`: Optional tags to be attached to some MISP attributes
+
+
+**Example**
+
+```bash
+tshark \
+    -r ~/Downloads/capture.cap \
+    -X lua_script:/home/john/.local/lib/wireshark/plugins/misp-wireshark/misp-wireshark.lua \
+    -X lua_script1:filters="ip.addr == 127.0.0.1" \
+    -X lua_script1:include_payload=n \
+    -X lua_script1:tags="tlp1,tlp2" \
+    frame.number == 0
+```
+*Note: As we did not supply an export path, the result is printed on stdout. However, to avoid mixing both the plugin output and tshark output, we provide a filter to tshark that will filter out every packets.*
 
 ## Installation
 
