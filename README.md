@@ -39,7 +39,9 @@ tshark \
     -X lua_script1:tags="tlp1,tlp2" \
     frame.number == 0
 ```
-*Note: As we did not supply an export path, the result is printed on stdout. However, to avoid mixing both the plugin output and tshark output, we provide a filter to tshark that will filter out every packets.*
+*Note: As we did not supply an export path, the result is printed on stdout. However, to avoid mixing both the plugin output and tshark output, we provide a filter to tshark that will filter out every packets. However, this filter is not used by the plugin. Only the filter provided via `-X lua_script1:filters` is used.*
+
+*Based on the example above, `frame.number == 0` is only used to prevent the output of tshark while `ip.addr == 127.0.0.1` is actually used by the plugin*
 
 ## Installation
 
