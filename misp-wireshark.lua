@@ -112,7 +112,7 @@ function register_tap()
     function tap.packet(pinfo,tvb)
         local frame_number = tonumber(tostring(get_frame_number()))
         local community_id = nil
-        if SUPPORT_COMMUNITY_ID then
+        if SUPPORT_COMMUNITY_ID and get_community_id() ~= nil then
             community_id = tostring(get_community_id())
         end
 
@@ -340,9 +340,11 @@ function handleTCP(tcp_streams, contextualData)
         }
     else
         local stream = tcp_streams[index]
-        stream.stop_time = start_time
-        stream.flow_duration = stream.stop_time - stream.start_time
-        stream.packet_count = stream.packet_count + 1
+	if start_time ~= nil then
+        	stream.stop_time = start_time
+        	stream.flow_duration = stream.stop_time - stream.start_time
+        	stream.packet_count = stream.packet_count + 1
+	end
     end
 end
 
